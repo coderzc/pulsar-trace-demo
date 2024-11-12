@@ -51,13 +51,13 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
 
     private final PulsarTemplate<String> pulsarSpringProducer;
 
-    private final Consumer<String> nativePulsarConsumer;
+    private final Consumer<String> pulsarConsumer;
 
      private final ExecutorService executor = Executors.newFixedThreadPool(2);
 
     public MessageGRPCService(PulsarTemplate<String> pulsarSpringProducer, PulsarClient pulsarClient) {
         this.pulsarSpringProducer = pulsarSpringProducer;
-        this.nativePulsarConsumer = initPulsarConsumer(pulsarClient);
+        this.pulsarConsumer = initPulsarConsumer(pulsarClient);
         receiveMessageAsync();
     }
 
@@ -66,7 +66,7 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
         try {
             nativePulsarConsumer = pulsarClient.newConsumer(Schema.STRING)
                     .topic("persistent://public/default/tmc-att")
-                    .subscriptionName("native-client-sub-6")
+                    .subscriptionName("my-sub")
                     .subscribe();
         } catch (PulsarClientException e) {
             throw new RuntimeException(e);
@@ -75,16 +75,14 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
     }
 
     private CompletableFuture<Void> receiveMessageAsync() {
-        return nativePulsarConsumer.receiveAsync().thenAccept(message -> {
+        return pulsarConsumer.receiveAsync().thenAccept(message -> {
             log.info("Received message: {}", message.getValue());
 
-            if (message.getTopicName().contains("mc-att")) {
-                // Using other thread to send post request
-                executor.execute(() -> sendPostRequest(message.getValue()));
-            }
+            // Using other thread to send post request
+            executor.execute(() -> sendPostRequest(message.getValue()));
 
             try {
-                nativePulsarConsumer.acknowledge(message);
+                pulsarConsumer.acknowledge(message);
             } catch (PulsarClientException e) {
                 throw new RuntimeException(e);
             }

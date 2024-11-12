@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.example.message;
+package com.example.rest_service;
 
 import com.example.MessageRequest;
 import com.example.MessageResponse;
@@ -24,10 +24,12 @@ import com.example.MessageServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.UUID;
-
+import org.junit.jupiter.api.Test;
 
 public class TestGrpcClient {
-    public static void main(String[] args) {
+
+    @Test
+    public void testGrpcClient() {
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 9090)
             .usePlaintext()
             .build();
