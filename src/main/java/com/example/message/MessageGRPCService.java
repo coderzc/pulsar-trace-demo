@@ -37,12 +37,14 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.pulsar.client.api.Consumer;
+import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.pulsar.annotation.PulsarListener;
 import org.springframework.pulsar.core.PulsarTemplate;
 
 @GrpcService
@@ -59,6 +61,7 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
         this.pulsarSpringProducer = pulsarSpringProducer;
         this.pulsarConsumer = initPulsarConsumer(pulsarClient);
         receiveMessageAsync();
+//        receiveMessageSync();
     }
 
     private Consumer<String> initPulsarConsumer(PulsarClient pulsarClient) {
@@ -89,6 +92,29 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
             receiveMessageAsync();
         });
     }
+//
+//    private void receiveMessageSync() {
+//        executor.execute(() -> {
+//            while (true) {
+//                try {
+//                    Message<String> message = pulsarConsumer.receive();
+//                    log.info("Received message: {}", message.getValue());
+//
+//                    executor.execute(() -> sendPostRequest(message.getValue()));
+//
+//                    pulsarConsumer.acknowledge(message);
+//                } catch (PulsarClientException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        });
+//    }
+
+//    @PulsarListener(topics = "persistent://public/default/tmc-att", subscriptionName = "listener-sub")
+//    public void listen(Message<String> message) {
+//        log.info("Received message from listener: {}", message.getValue());
+//        executor.execute(() -> sendPostRequest(message.getValue()));
+//    }
 
     @Override
     public void publishMessage(MessageRequest request, StreamObserver<MessageResponse> responseObserver) {
