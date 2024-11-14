@@ -44,8 +44,8 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.pulsar.annotation.PulsarListener;
 import org.springframework.pulsar.core.PulsarTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 @GrpcService
 public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBase {
@@ -60,8 +60,7 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
     public MessageGRPCService(PulsarTemplate<String> pulsarSpringProducer, PulsarClient pulsarClient) {
         this.pulsarSpringProducer = pulsarSpringProducer;
         this.pulsarConsumer = initPulsarConsumer(pulsarClient);
-        receiveMessageAsync();
-//        receiveMessageSync();
+//        receiveMessageAsync();
     }
 
     private Consumer<String> initPulsarConsumer(PulsarClient pulsarClient) {
@@ -70,6 +69,7 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
             nativePulsarConsumer = pulsarClient.newConsumer(Schema.STRING)
                     .topic("persistent://public/default/tmc-att")
                     .subscriptionName("my-sub")
+                    .messageListener(this::consume)
                     .subscribe();
         } catch (PulsarClientException e) {
             throw new RuntimeException(e);
@@ -77,46 +77,37 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
         return nativePulsarConsumer;
     }
 
-    private CompletableFuture<Void> receiveMessageAsync() {
-        return pulsarConsumer.receiveAsync().thenAccept(message -> {
-            log.info("Received message: {}", message.getValue());
-
-            // Using other thread to send post request
-            executor.execute(() -> sendPostRequest(message.getValue()));
-
-            try {
-                pulsarConsumer.acknowledge(message);
-            } catch (PulsarClientException e) {
-                throw new RuntimeException(e);
-            }
-            receiveMessageAsync();
-        });
-    }
+//    private CompletableFuture<Void> receiveMessageAsync() {
+//        return pulsarConsumer.receiveAsync().thenAccept(message -> {
+//            log.info("Received message: {}", message.getValue());
 //
-//    private void receiveMessageSync() {
-//        executor.execute(() -> {
-//            while (true) {
-//                try {
-//                    Message<String> message = pulsarConsumer.receive();
-//                    log.info("Received message: {}", message.getValue());
+//            // Using other thread to send post request
+//            sendPostRequest(message.getValue());
 //
-//                    executor.execute(() -> sendPostRequest(message.getValue()));
-//
-//                    pulsarConsumer.acknowledge(message);
-//                } catch (PulsarClientException e) {
-//                    throw new RuntimeException(e);
-//                }
+//            try {
+//                pulsarConsumer.acknowledge(message);
+//            } catch (PulsarClientException e) {
+//                throw new RuntimeException(e);
 //            }
+//            receiveMessageAsync();
 //        });
 //    }
 
-//    @PulsarListener(topics = "persistent://public/default/tmc-att", subscriptionName = "listener-sub")
-//    public void listen(Message<String> message) {
-//        log.info("Received message from listener: {}", message.getValue());
-//        executor.execute(() -> sendPostRequest(message.getValue()));
-//    }
+    public void consume(Consumer<String> consumer, Message<String> message) {
+        log.info("Received message from listener: {}", message.getValue());
+
+        // Using other thread to send post request
+        executor.execute(() -> sendPostRequest(message.getValue()));
+
+        try {
+            consumer.acknowledge(message);
+        } catch (PulsarClientException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
+    @Transactional
     public void publishMessage(MessageRequest request, StreamObserver<MessageResponse> responseObserver) {
         String message = request.getMessage();
 
