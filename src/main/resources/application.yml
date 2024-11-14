@@ -1,0 +1,12 @@
+server:
+  port: 8777
+spring:
+  application:
+    name: spring-message
+  pulsar:
+    client:
+      service-url: pulsar://localhost:6650
+grpc:
+  server:
+    port: 9090
+    address: 0.0.0.0
