@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option java_package = "com.example";
+option java_multiple_files = true;
+
+message MessageRequest {
+    // a name to greet, default is "World"
+    optional string message = 1;
+}
+
+message MessageResponse {
+    string messageID = 1;
+}
+
+service MessageService {
+    rpc PublishMessage(MessageRequest) returns (MessageResponse);
+}
