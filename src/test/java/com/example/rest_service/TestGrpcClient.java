@@ -21,11 +21,14 @@ package com.example.rest_service;
 import com.example.MessageRequest;
 import com.example.MessageResponse;
 import com.example.MessageServiceGrpc;
+import com.example.message.MessageServiceApplication;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
+@SpringBootTest(classes = MessageServiceApplication.class)
 public class TestGrpcClient {
 
     @Test

@@ -107,7 +107,7 @@ public class MessageGRPCService extends MessageServiceGrpc.MessageServiceImplBas
     }
 
     @Override
-    @Transactional
+//    @Transactional
     public void publishMessage(MessageRequest request, StreamObserver<MessageResponse> responseObserver) {
         String message = request.getMessage();
 
